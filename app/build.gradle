@@ -7,7 +7,7 @@ android {
     compileSdk 31
 
     defaultConfig {
-        applicationId "com.example.bestweather"
+        applicationId "com.rck.bestweather"
         minSdk 24
         targetSdk 31
         versionCode 1
