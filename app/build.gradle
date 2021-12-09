@@ -21,6 +21,10 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        debug {
+            it.buildConfigField "String", "MAPS_API_KEY", keys.mapsApiKey
+            it.buildConfigField "String", "WEATHER_API_KEY", keys.weatherApiKey
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

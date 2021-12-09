@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Best Weather</string>
+    <string name="find_best_weather">Find Best Weather</string>
 </resources>
