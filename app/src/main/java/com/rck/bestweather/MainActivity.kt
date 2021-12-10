@@ -1,4 +1,4 @@
-/*
+/**
    © Copyright Ryan Kennedy
 
     This file is part of Best Weather.
@@ -27,14 +27,13 @@ import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import android.graphics.PorterDuff
 import android.util.Log
-import kotlin.math.pow
-import kotlin.math.roundToInt
-import kotlin.math.sqrt
+import kotlin.math.*
 
 
 // Use BuildConfig.EXAMPLE_API_KEY to access api keys
 
 class MainActivity : AppCompatActivity() {
+    private val MAX_POINTS = 60
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,11 +64,28 @@ class MainActivity : AppCompatActivity() {
 
     fun start(view: View) {
         Log.d("start", "onClick works")
+        pointCoordinates(10, 42.2, -72.5)
     }
-    
-    // radius in miles
-    fun pointCoordinates(radius: Int) {
-        val numberOfPoints = (1.23.pow(radius) + 5).roundToInt()
+
+    /**
+     * This function calculates a set of roughly equidistant geographic coordinates
+     * within a given radius of the current location
+     * @param radius the radius in miles
+     * @param currentLatitude the current geographic latitude
+     * @param currentLongitude the current geographic longitude
+     * @return a Map of longitude and latitude values
+     */
+    private fun pointCoordinates(radius: Int, currentLatitude: Double, currentLongitude: Double): Map<Double, Double> {
+        // arbitrary function to determine number of points per increase in radius
+        val num = (1.23.pow(radius) + 5).roundToInt()
+        val numberOfPoints = if (num > MAX_POINTS) MAX_POINTS else num
+
+        /**
+         * Uses the sunflower seed method to distribute roughly equidistant points
+         * within a circle
+         * @param numberOfPoints should not exceed MAX_POINTS
+         * @return polar coordinates (theta, radius) of these roughly equidistant points
+         */
         fun generatePolarCoordinates(numberOfPoints: Int): Map<Double, Double> {
             val coords: MutableMap<Double, Double> = mutableMapOf()
             val phi = (1 + sqrt(5.0)) / 2
@@ -80,6 +96,57 @@ class MainActivity : AppCompatActivity() {
             }
             return coords
         }
+
+        /**
+         * Converts polar coordinates to cartesian coordinates
+         * @param coords Map of polar coordinates
+         * @return Map of cartesian coordinates
+         */
+        fun convertToCartesian(coords: Map<Double, Double>): Map<Double, Double> {
+            val cartCoords = mutableMapOf<Double, Double>()
+            for ((t, r) in coords) {
+                cartCoords[r * cos(t)] = r * sin(t)
+            }
+            return cartCoords
+        }
+
+        /**
+         * Converts generated cartesian coordinates (which are all in the range of -1 to 1)
+         * into actual geographic coordinates as determined by the current location (passed by
+         * parent function)
+         * Note: longitude = x, latitude = y
+         * @param coords a Map of cartesian coordinates all in the range of -1 to 1
+         * @return a Map of geographic coordinates
+         */
+        fun convertToGeoCoords(coords: Map<Double, Double>): Map<Double, Double> {
+            val geoCoords = mutableMapOf<Double, Double>()
+            // radius is in miles, not degrees of lat/long
+            // use current location to define number of miles per degree long/lat
+            // one degree latitude = 69 miles
+            // 1 degree of Longitude = cosine (latitude in radians) * 69.172 [distance in miles of longitude degree at equator]
+            // second add current coords to coords
+
+            val oneDegreeLatitudeInMiles = 69.0
+            val oneDegreeLongitudeInMiles = cos(currentLatitude * (Math.PI / 180)) * 69.172
+
+            val xRadius = radius / oneDegreeLongitudeInMiles
+            val yRadius = radius / oneDegreeLatitudeInMiles
+
+            for((x, y) in coords) {
+                geoCoords[x * xRadius + currentLongitude] = y * yRadius + currentLatitude
+            }
+            return geoCoords
+        }
+
+        val polarCoords = generatePolarCoordinates(numberOfPoints)
+        val coords = convertToCartesian(polarCoords)
+        val geoCoords = convertToGeoCoords(coords)
+        for (long in geoCoords.keys) {
+            Log.d("GeoCoords: longitude, latitude", "${long}, ${geoCoords[long]}")
+        }
+
+        return geoCoords
+
     }
 
 //    code to call google geocoding api
