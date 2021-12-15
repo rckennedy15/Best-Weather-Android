@@ -1,0 +1,71 @@
+<!--
+    © Copyright Ryan Kennedy
+
+    This file is part of Best Weather.
+
+    Best Weather is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Best Weather is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Best Weather.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="Main Preferences">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="prioritizeTemp"
+            app:title="Prioritize the temperature over the cloud cover" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="preferHighTemp"
+            app:title="Prefer higher temperatures over lower temperatures" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="preferHighCloudCover"
+            app:title="Prefer more clouds" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Advanced">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="allowThunderstorms"
+            app:title="Allow Thunderstorms" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="allowDrizzle"
+            app:title="Allow Drizzle" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="allowRain"
+            app:title="Allow Rain" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="allowSnow"
+            app:title="Allow Snow" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="allowAtmospheric"
+            app:title="Allow Atmospheric conditions"
+            app:summary="fog, smoke, sand, etc."/>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

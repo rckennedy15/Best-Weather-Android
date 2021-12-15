@@ -39,7 +39,7 @@
         android:onClick="start"/>
 
     <ImageView
-        android:id="@+id/imageView2"
+        android:id="@+id/settingsButton"
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:layout_marginTop="32dp"
@@ -47,7 +47,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_baseline_settings_24"
-        android:contentDescription="@string/settings" />
+        android:contentDescription="@string/settings"
+        android:onClick="openSettings"/>
 
     <TextView
         android:id="@+id/textView"

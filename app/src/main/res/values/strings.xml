@@ -3,4 +3,5 @@
     <string name="find_best_weather">Find Best Weather</string>
     <string name="copyright_notice">© Copyright Ryan Kennedy</string>
     <string name="settings">settings</string>
+    <string name="title_activity_settings">SettingsActivity</string>
 </resources>
