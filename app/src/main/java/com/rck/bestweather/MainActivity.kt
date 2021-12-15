@@ -30,9 +30,7 @@ import android.graphics.PorterDuff
 import android.util.Log
 import android.widget.Toast
 import androidx.preference.PreferenceManager
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.IOException
@@ -42,7 +40,9 @@ import kotlin.math.*
 import kotlin.properties.Delegates
 
 
-// Use BuildConfig.EXAMPLE_API_KEY to access api keys
+// TODO Save weather results and do not update them unless location has significantly changed
+// TODO add animation for loading weather
+// TODO change UI on MainActivity and ResultsActivity
 
 class MainActivity : AppCompatActivity() {
     private val MAX_POINTS = 60
@@ -116,23 +116,217 @@ class MainActivity : AppCompatActivity() {
         // double check that prefs are up to date before running
         initalizePrefs()
 
-        val coordinatesMap = pointCoordinates(10, 42.2, -72.5)
-        val bestWeatherCoordinates = findBestWeatherCoordinates(coordinatesMap)
-        if (bestWeatherCoordinates != null) {
-            // TODO
-        } else {
-            // TODO no coordinates found with current settings
+        val coordinatesMap = pointCoordinates(30, 42.2, -72.5)
+        val context = this
+        GlobalScope.launch {
+            val bestWeatherObject: JSONObject? = findBestWeatherObject(coordinatesMap)
+            if (bestWeatherObject != null) {
+                Log.d("results", bestWeatherObject.toString())
+                val name = bestWeatherObject.getString("name")
+                val temp = bestWeatherObject.getJSONObject("main").getDouble("feels_like")
+                val clouds = bestWeatherObject.getJSONObject("clouds").getDouble("all")
+                runOnUiThread {
+                    val intent = Intent(context, ResultsActivity::class.java)
+                    intent.putExtra("name", name)
+                    intent.putExtra("temp", temp)
+                    intent.putExtra("clouds", clouds)
+                    startActivity(intent)
+                }
+            } else {
+                // TODO no coordinates found with current settings
+            }
         }
     }
 
-    private fun findBestWeatherCoordinates(coordinates: Map<Double, Double>): Pair<Double, Double>? {
+    private suspend fun findBestWeatherObject(coordinates: Map<Double, Double>): JSONObject? = withContext(Dispatchers.IO) {
         // TODO
         // steps
         // find weather of every point
         // eliminate options based on add'l user settings
         // based on prioritizeTemp pick highest/lowest temp (based on preferHighTemp)
         // OR pick highest/lowest clouds (based on preferHighCloudCover)
-        return null
+        suspend fun getWeathers(): List<JSONObject> {
+            val weathers = mutableListOf<JSONObject>()
+            for ((long, lat) in coordinates) {
+                GlobalScope.launch {
+                    val JSONResponse = getJSONResponse("https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${long}&appid=${BuildConfig.WEATHER_API_KEY}")
+                    if (JSONResponse != null) {
+                        weathers.add(JSONResponse)
+                    }
+                }.join()
+            }
+            for (weather in weathers) {
+                Log.d("list", weather.toString())
+            }
+            return weathers
+        }
+
+        fun filterResults(result: List<JSONObject>): List<JSONObject> {
+            val filteredResult = mutableListOf<JSONObject>()
+            for (res in result) {
+                val weather = res.getJSONArray("weather")[0] as JSONObject
+                val id = weather.getInt("id")
+                if (id in 200..299 && allowThunderstorms) {
+                    filteredResult.add(res)
+                } else if (id in 300..399 && allowDrizzle) {
+                    filteredResult.add(res)
+                } else if (id in 500..599 && allowRain) {
+                    filteredResult.add(res)
+                } else if (id in 600..699 && allowSnow) {
+                    filteredResult.add(res)
+                } else if (id in 700..799 && allowAtmospheric) {
+                    filteredResult.add(res)
+                } else if (id in 800..899) {
+                    // clear or cloudy weather is never filtered
+                    filteredResult.add(res)
+                }
+            }
+            return filteredResult
+        }
+
+        fun pickBest(result: List<JSONObject>): JSONObject? {
+            // if there's a tie, pick the best one based on the other criteria
+            // TODO refactor this, lots of repeated logic
+            if (prioritizeTemp) {
+                if (preferHighTemp) {
+                    // pick highest temp
+                    var highestTemp = -1.0
+                    var bestWeather: JSONObject? = null
+                    for (res in result) {
+                        var resultTemp = res.getJSONObject("main").getDouble("feels_like")
+                        if (resultTemp > highestTemp) {
+                            highestTemp = resultTemp
+                            bestWeather = res
+                        } else if (resultTemp == highestTemp) {
+                            if (preferHighCloudCover) {
+                                // pick tie breaker with higher cloud cover
+                                if (bestWeather != null) {
+                                    if (res.getJSONObject("clouds").getDouble("all") >
+                                        bestWeather.getJSONObject("clouds").getDouble("all"))
+                                            bestWeather = res
+                                } else {
+                                    bestWeather = res
+                                }
+                            } else {
+                                // pick tie breaker with lower cloud cover
+                                if (bestWeather != null) {
+                                    if (res.getJSONObject("clouds").getDouble("all") <
+                                        bestWeather.getJSONObject("clouds").getDouble("all"))
+                                            bestWeather = res
+                                } else {
+                                    bestWeather = res
+                                }
+                            }
+                        }
+                    }
+                    return bestWeather
+                } else {
+                    // pick lowest temp
+                    var lowestTemp = 999.0
+                    var bestWeather: JSONObject? = null
+                    for (res in result) {
+                        var resultTemp = res.getJSONObject("main").getDouble("feels_like")
+                        if (resultTemp < lowestTemp) {
+                            lowestTemp = resultTemp
+                            bestWeather = res
+                        } else if (resultTemp == lowestTemp) {
+                            if (preferHighCloudCover) {
+                                // pick tie breaker with higher cloud cover
+                                if (bestWeather != null) {
+                                    if (res.getJSONObject("clouds").getDouble("all") >
+                                        bestWeather.getJSONObject("clouds").getDouble("all"))
+                                            bestWeather = res
+                                } else {
+                                    bestWeather = res
+                                }
+                            } else {
+                                // pick tie breaker with lower cloud cover
+                                if (bestWeather != null) {
+                                    if (res.getJSONObject("clouds").getDouble("all") <
+                                        bestWeather.getJSONObject("clouds").getDouble("all"))
+                                            bestWeather = res
+                                } else {
+                                    bestWeather = res
+                                }
+                            }
+                        }
+                    }
+                    return bestWeather
+                }
+            } else {
+                if (preferHighCloudCover) {
+                    // pick highest cloud cover
+                    var highestCloudCover = -1.0
+                    var bestWeather: JSONObject? = null
+                    for (res in result) {
+                        var resultCloudCover = res.getJSONObject("clouds").getDouble("all")
+                        if (resultCloudCover > highestCloudCover) {
+                            highestCloudCover = resultCloudCover
+                            bestWeather = res
+                        } else if (resultCloudCover == highestCloudCover) {
+                            if (preferHighTemp) {
+                                // pick tie breaker with higher temp
+                                if (bestWeather != null) {
+                                    if (res.getJSONObject("main").getDouble("feels_like") >
+                                        bestWeather.getJSONObject("main").getDouble("feels_like"))
+                                            bestWeather = res
+                                } else {
+                                    bestWeather = res
+                                }
+                            } else {
+                                // pick the tie breaker with lower temp
+                                if (bestWeather != null) {
+                                    if (res.getJSONObject("main").getDouble("feels_like") <
+                                        bestWeather.getJSONObject("main").getDouble("feels_like"))
+                                        bestWeather = res
+                                } else {
+                                    bestWeather = res
+                                }
+                            }
+                        }
+                    }
+                    return bestWeather
+                } else {
+                    // pick lowest clouds
+                    var lowestCloudCover = 999.0
+                    var bestWeather: JSONObject? = null
+                    for (res in result) {
+                        var resultCloudCover = res.getJSONObject("clouds").getDouble("all")
+                        if (resultCloudCover < lowestCloudCover) {
+                            lowestCloudCover = resultCloudCover
+                            bestWeather = res
+                        } else if (resultCloudCover == lowestCloudCover) {
+                            if (preferHighTemp) {
+                                // pick tie breaker with higher temp
+                                if (bestWeather != null) {
+                                    if (res.getJSONObject("main").getDouble("feels_like") >
+                                        bestWeather.getJSONObject("main").getDouble("feels_like"))
+                                        bestWeather = res
+                                } else {
+                                    bestWeather = res
+                                }
+                            } else {
+                                // pick the tie breaker with lower temp
+                                if (bestWeather != null) {
+                                    if (res.getJSONObject("main").getDouble("feels_like") <
+                                        bestWeather.getJSONObject("main").getDouble("feels_like"))
+                                        bestWeather = res
+                                } else {
+                                    bestWeather = res
+                                }
+                            }
+                        }
+                    }
+                    return bestWeather
+                }
+            }
+        }
+
+        val best: JSONObject?
+        var weathers: List<JSONObject> = getWeathers()
+        weathers = filterResults(weathers)
+        best = pickBest(weathers)
+        best
     }
 
     /**
@@ -141,7 +335,7 @@ class MainActivity : AppCompatActivity() {
      * @param radius the radius in miles
      * @param currentLatitude the current geographic latitude
      * @param currentLongitude the current geographic longitude
-     * @return a Map of longitude and latitude values
+     * @return a Map of longitude and latitude values where (key = longitude, value = latitude)
      */
     private fun pointCoordinates(radius: Int, currentLatitude: Double, currentLongitude: Double): Map<Double, Double> {
         // arbitrary function to determine number of points per increase in radius
