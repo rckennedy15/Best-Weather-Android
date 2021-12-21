@@ -38,20 +38,28 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.*
 import kotlin.properties.Delegates
+import android.app.ProgressDialog
+import android.widget.SeekBar
+import android.widget.SeekBar.OnSeekBarChangeListener
+import android.widget.TextView
 
 
 // TODO Save weather results and do not update them unless location has significantly changed
-// TODO add animation for loading weather
 // TODO change UI on MainActivity and ResultsActivity
+// TODO use real location
+// TODO add error activity (no location found)
+
+// TODO max distance is hardcoded to 100 miles, change to dynamic
 
 class MainActivity : AppCompatActivity() {
-    private val MAX_POINTS = 60
-    // user settings
+    private val MAX_POINTS = 60 // hardcoded to not exceed api limits
+    private var radius = 10
+    // user settings (shared prefs)
     private var prioritizeTemp by Delegates.notNull<Boolean>()
     private var preferHighTemp by Delegates.notNull<Boolean>()
     private var preferHighCloudCover by Delegates.notNull<Boolean>()
 
-    // additional user settings
+    // additional user settings (shared prefs)
     private var allowThunderstorms by Delegates.notNull<Boolean>()
     private var allowDrizzle by Delegates.notNull<Boolean>()
     private var allowRain by Delegates.notNull<Boolean>()
@@ -108,13 +116,34 @@ class MainActivity : AppCompatActivity() {
 
             v?.onTouchEvent(event) ?: true
         }
-        initalizePrefs()
+        val radiusBar = findViewById<SeekBar>(R.id.seekBar)
+        val t1 = findViewById<TextView>(R.id.t1)
+        radiusBar.min = 10
+        radiusBar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
+            override fun onStopTrackingTouch(seekBar: SeekBar) {}
 
+            override fun onStartTrackingTouch(seekBar: SeekBar) {}
+
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                t1.text = "$progress Miles"
+                radius = progress
+            }
+        })
+        initalizePrefs()
     }
 
     fun start(view: View) {
         // double check that prefs are up to date before running
         initalizePrefs()
+
+        // Note: this is deprecated but its the easiest way I found to show a blocking loading screen
+        val nDialog: ProgressDialog
+        nDialog = ProgressDialog(this)
+        nDialog.setMessage("Loading...")
+        nDialog.setTitle("Fetching Weather Data Within $radius Miles...")
+        nDialog.isIndeterminate = false
+        nDialog.setCancelable(false)
+        nDialog.show()
 
         val coordinatesMap = pointCoordinates(30, 42.2, -72.5)
         val context = this
@@ -125,6 +154,7 @@ class MainActivity : AppCompatActivity() {
                 val name = bestWeatherObject.getString("name")
                 val temp = bestWeatherObject.getJSONObject("main").getDouble("feels_like")
                 val clouds = bestWeatherObject.getJSONObject("clouds").getDouble("all")
+                nDialog.dismiss()
                 runOnUiThread {
                     val intent = Intent(context, ResultsActivity::class.java)
                     intent.putExtra("name", name)
