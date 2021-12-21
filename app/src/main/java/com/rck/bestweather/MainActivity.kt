@@ -24,11 +24,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
-import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import android.graphics.PorterDuff
 import android.util.Log
-import android.widget.Toast
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.*
 import org.json.JSONObject
@@ -39,22 +37,29 @@ import java.net.URL
 import kotlin.math.*
 import kotlin.properties.Delegates
 import android.app.ProgressDialog
-import android.widget.SeekBar
+import android.content.pm.PackageManager
+import android.widget.*
 import android.widget.SeekBar.OnSeekBarChangeListener
-import android.widget.TextView
+import androidx.core.app.ActivityCompat
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
+import java.util.*
 
 // urgent
 // TODO change UI on MainActivity and ResultsActivity
-// TODO use real location
 // TODO add error activity (no location found)
+// TODO add button to manually refresh location
 
 // future
 // TODO max distance is hardcoded to 100 miles, change to dynamic
 // TODO Save weather results and do not update them unless location has significantly changed
+// TODO make weather api calls multithreaded
 
 class MainActivity : AppCompatActivity() {
     private val MAX_POINTS = 60 // hardcoded to not exceed api limits
     private var radius = 10
+
     // user settings (shared prefs)
     private var prioritizeTemp by Delegates.notNull<Boolean>()
     private var preferHighTemp by Delegates.notNull<Boolean>()
@@ -66,6 +71,8 @@ class MainActivity : AppCompatActivity() {
     private var allowRain by Delegates.notNull<Boolean>()
     private var allowSnow by Delegates.notNull<Boolean>()
     private var allowAtmospheric by Delegates.notNull<Boolean>()
+
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
     private fun initalizePrefs() {
         val sharedPref = PreferenceManager.getDefaultSharedPreferences(this)
@@ -96,6 +103,7 @@ class MainActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
         val button = findViewById<ImageView>(R.id.getWeather)
         // Just adds a 'click' effect when you press the button
@@ -114,7 +122,6 @@ class MainActivity : AppCompatActivity() {
                     view.invalidate()
                 }
             }
-
             v?.onTouchEvent(event) ?: true
         }
         val radiusBar = findViewById<SeekBar>(R.id.seekBar)
@@ -133,10 +140,17 @@ class MainActivity : AppCompatActivity() {
         initalizePrefs()
     }
 
-    fun start(view: View) {
-        // double check that prefs are up to date before running
-        initalizePrefs()
+    fun fetchLocation(view: View) {
+        val task = fusedLocationProviderClient.lastLocation
 
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED && ActivityCompat
+                    .checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION), 101)
+            return
+        }
         // Note: this is deprecated but its the easiest way I found to show a blocking loading screen
         val nDialog: ProgressDialog
         nDialog = ProgressDialog(this)
@@ -146,7 +160,31 @@ class MainActivity : AppCompatActivity() {
         nDialog.setCancelable(false)
         nDialog.show()
 
-        val coordinatesMap = pointCoordinates(radius, 42.2, -72.5)
+        task.addOnSuccessListener { res ->
+            if (res != null) {
+                // last location is available, will be faster
+                Toast.makeText(this, "Latitude: ${res.latitude}, Longitude: ${res.longitude}", Toast.LENGTH_SHORT).show()
+                start(res.latitude, res.longitude, nDialog)
+            } else {
+                // unable to get last location, need to update, will be slower
+                val task1 = fusedLocationProviderClient.getCurrentLocation(LocationRequest.PRIORITY_HIGH_ACCURACY, null)
+                task1.addOnSuccessListener {
+                    if (it != null) {
+                        Toast.makeText(this, "Latitude: ${it.latitude}, Longitude: ${it.longitude}", Toast.LENGTH_SHORT).show()
+                        start(it.latitude, it.longitude, nDialog)
+                    } else {
+                        Toast.makeText(this, "unable to get location", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun start(lat: Double, lon: Double, nDialog: ProgressDialog) {
+        // double check that prefs are up to date before running
+        initalizePrefs()
+
+        val coordinatesMap = pointCoordinates(radius, lat, lon)
         val context = this
         GlobalScope.launch {
             val bestWeatherObject: JSONObject? = findBestWeatherObject(coordinatesMap)
@@ -504,7 +542,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun openSettings(view: android.view.View) {
+    fun openSettings(view: View) {
         val intent = Intent(this, SettingsActivity::class.java)
         startActivity(intent)
     }
