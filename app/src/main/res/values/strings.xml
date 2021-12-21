@@ -4,4 +4,6 @@
     <string name="copyright_notice">© Copyright Ryan Kennedy</string>
     <string name="settings">settings</string>
     <string name="title_activity_settings">SettingsActivity</string>
+    <string name="unfortunately_location_access_is_required">Unfortunately, location access is required for this app. Please go back and enable it to continue using app. Thank you!</string>
+    <string name="okay">Okay!</string>
 </resources>

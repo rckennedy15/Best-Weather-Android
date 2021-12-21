@@ -43,13 +43,14 @@ import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.TextView
 
-
-// TODO Save weather results and do not update them unless location has significantly changed
+// urgent
 // TODO change UI on MainActivity and ResultsActivity
 // TODO use real location
 // TODO add error activity (no location found)
 
+// future
 // TODO max distance is hardcoded to 100 miles, change to dynamic
+// TODO Save weather results and do not update them unless location has significantly changed
 
 class MainActivity : AppCompatActivity() {
     private val MAX_POINTS = 60 // hardcoded to not exceed api limits
@@ -145,7 +146,7 @@ class MainActivity : AppCompatActivity() {
         nDialog.setCancelable(false)
         nDialog.show()
 
-        val coordinatesMap = pointCoordinates(30, 42.2, -72.5)
+        val coordinatesMap = pointCoordinates(radius, 42.2, -72.5)
         val context = this
         GlobalScope.launch {
             val bestWeatherObject: JSONObject? = findBestWeatherObject(coordinatesMap)
