@@ -28,15 +28,15 @@
 
     <ImageView
         android:id="@+id/getWeather"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
         android:contentDescription="@string/find_best_weather"
+        android:onClick="fetchLocation"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_button"
-        android:onClick="fetchLocation"/>
+        app:srcCompat="@drawable/ic_button_outline" />
 
     <ImageView
         android:id="@+id/settingsButton"
@@ -44,11 +44,11 @@
         android:layout_height="60dp"
         android:layout_marginTop="32dp"
         android:layout_marginEnd="32dp"
+        android:contentDescription="@string/settings"
+        android:onClick="openSettings"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_baseline_settings_24"
-        android:contentDescription="@string/settings"
-        android:onClick="openSettings"/>
+        app:srcCompat="@drawable/ic_baseline_settings_24" />
 
     <TextView
         android:id="@+id/textView"
@@ -56,6 +56,7 @@
         android:layout_height="19dp"
         android:layout_marginBottom="24dp"
         android:text="@string/copyright_notice"
+        android:textColor="#25606E"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -64,6 +65,7 @@
         android:id="@+id/seekBar"
         android:layout_width="254dp"
         android:layout_height="31dp"
+        app:layout_constraintBottom_toTopOf="@+id/textView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/getWeather" />
@@ -73,7 +75,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="10 Miles"
-        app:layout_constraintBottom_toBottomOf="@+id/getWeather"
-        app:layout_constraintEnd_toEndOf="@+id/seekBar"
-        app:layout_constraintStart_toStartOf="@+id/seekBar" />
+        android:textColor="#97DDEC"
+        android:textSize="25sp"
+        app:layout_constraintBottom_toTopOf="@+id/seekBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/getWeather" />
 </androidx.constraintlayout.widget.ConstraintLayout>

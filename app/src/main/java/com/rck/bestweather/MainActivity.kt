@@ -47,14 +47,13 @@ import com.google.android.gms.location.LocationServices
 import java.util.*
 
 // urgent
-// TODO change UI on MainActivity and ResultsActivity
 // TODO add error activity (no location found)
-// TODO add button to manually refresh location
 
 // future
 // TODO max distance is hardcoded to 100 miles, change to dynamic
 // TODO Save weather results and do not update them unless location has significantly changed
 // TODO make weather api calls multithreaded
+// TODO add button to manually refresh location
 
 class MainActivity : AppCompatActivity() {
     private val MAX_POINTS = 60 // hardcoded to not exceed api limits
@@ -186,7 +185,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Provides the basic starting point of this app. It is called after fetchLocation has found
-     * current location information.
+     * current location information. Launches results activity on completion.
      * @param lat the current latitude
      * @param lon the current longitude
      * @param nDialog the ongoing ProgressDialog that is loading while fetching the location and
@@ -205,12 +204,16 @@ class MainActivity : AppCompatActivity() {
                 val name = bestWeatherObject.getString("name")
                 val temp = bestWeatherObject.getJSONObject("main").getDouble("feels_like")
                 val clouds = bestWeatherObject.getJSONObject("clouds").getDouble("all")
+                val latitude = bestWeatherObject.getJSONObject("coord").getDouble("lat")
+                val longitude = bestWeatherObject.getJSONObject("coord").getDouble("lon")
                 nDialog.dismiss()
                 runOnUiThread {
                     val intent = Intent(context, ResultsActivity::class.java)
                     intent.putExtra("name", name)
                     intent.putExtra("temp", temp)
                     intent.putExtra("clouds", clouds)
+                    intent.putExtra("lat", latitude)
+                    intent.putExtra("lon", longitude)
                     startActivity(intent)
                 }
             } else {

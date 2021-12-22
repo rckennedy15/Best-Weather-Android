@@ -22,7 +22,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            it.buildConfigField "String", "MAPS_API_KEY", keys.mapsApiKey
             it.buildConfigField "String", "WEATHER_API_KEY", keys.weatherApiKey
         }
     }
@@ -48,4 +47,7 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2"
 
     implementation "com.google.android.gms:play-services-location:18.0.0"
+    implementation 'com.google.android.gms:play-services-maps:18.0.1'
+    implementation 'androidx.recyclerview:recyclerview:1.0.0'
+    implementation 'androidx.cardview:cardview:1.0.0'
 }
