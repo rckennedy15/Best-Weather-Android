@@ -140,6 +140,9 @@ class MainActivity : AppCompatActivity() {
         initalizePrefs()
     }
 
+    /**
+     * Uses the google play services fusedLocationProviderClient to fetch the current location.
+     */
     fun fetchLocation(view: View) {
         val task = fusedLocationProviderClient.lastLocation
 
@@ -161,12 +164,13 @@ class MainActivity : AppCompatActivity() {
         nDialog.show()
 
         task.addOnSuccessListener { res ->
-            if (res != null) {
+            if (res != null && res.elapsedRealtimeNanos < 1800000000000L) {
                 // last location is available, will be faster
                 Toast.makeText(this, "Latitude: ${res.latitude}, Longitude: ${res.longitude}", Toast.LENGTH_SHORT).show()
                 start(res.latitude, res.longitude, nDialog)
             } else {
                 // unable to get last location, need to update, will be slower
+                // or it has been over 30 minutes since last location update
                 val task1 = fusedLocationProviderClient.getCurrentLocation(LocationRequest.PRIORITY_HIGH_ACCURACY, null)
                 task1.addOnSuccessListener {
                     if (it != null) {
@@ -180,6 +184,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Provides the basic starting point of this app. It is called after fetchLocation has found
+     * current location information.
+     * @param lat the current latitude
+     * @param lon the current longitude
+     * @param nDialog the ongoing ProgressDialog that is loading while fetching the location and
+     * will continue to display until results are ready.
+     */
     private fun start(lat: Double, lon: Double, nDialog: ProgressDialog) {
         // double check that prefs are up to date before running
         initalizePrefs()
@@ -207,13 +219,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Uses map of coordinates to query openweathermap api, then uses settings from SharedPrefs to
+     * algorithmically determine the best weather coordinate, which then returns the whole JSON
+     * response linked to these coordinates.
+     * @param coordinates a map of coordinates (longitude, latitude)
+     * @return JSONObject of the
+     */
     private suspend fun findBestWeatherObject(coordinates: Map<Double, Double>): JSONObject? = withContext(Dispatchers.IO) {
-        // TODO
-        // steps
-        // find weather of every point
-        // eliminate options based on add'l user settings
-        // based on prioritizeTemp pick highest/lowest temp (based on preferHighTemp)
-        // OR pick highest/lowest clouds (based on preferHighCloudCover)
         suspend fun getWeathers(): List<JSONObject> {
             val weathers = mutableListOf<JSONObject>()
             for ((long, lat) in coordinates) {
@@ -477,47 +490,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         return geoCoords
-
-    }
-
-    /**
-     * FIXME does not let you use a restricted api key, will probable switch to nominatim/openstreetmap
-     * Is supposed to call google's geocoding api to convert coordinates into an actual town name
-     * @param latitude the latitude of the coordinates
-     * @param longitude the longitude of the coordinates
-     * @return the name of the town
-     */
-    private suspend fun geocodeCoordinates(latitude: Double, longitude: Double): String {
-        val url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&result_type=locality&key=${BuildConfig.MAPS_API_KEY}"
-        var res: JSONObject?
-        var name: String? = null
-        var JSONResponse: JSONObject?
-        var isDone = false
-        GlobalScope.launch {
-            JSONResponse = getJSONResponse(url)
-            Log.d("json", JSONResponse!!.toString())
-            try {
-                res = JSONResponse!!.getJSONArray("results")[0] as JSONObject
-                res = res!!.getJSONArray("address_components")[0] as JSONObject
-                synchronized(this) {
-                    name = res!!.getString("long_name")
-                }
-            } catch (err: ArrayIndexOutOfBoundsException) {
-                res = null
-                synchronized(this) {
-                    name = null
-                }
-            }
-            Log.d("name", name!!)
-            isDone = true
-        }.join()
-        while(true) {
-            if (isDone)
-                return name!!
-            else
-                delay(1000L)
-                continue
-        }
 
     }
 
