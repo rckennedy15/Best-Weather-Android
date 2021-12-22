@@ -6,4 +6,5 @@
     <string name="title_activity_settings">SettingsActivity</string>
     <string name="unfortunately_location_access_is_required">Unfortunately, location access is required for this app. Please go back and enable it to continue using app. Thank you!</string>
     <string name="okay">Okay!</string>
+    <string name="unfortunately_no_coordinates_have_been_found_with_the_current_settings_try_to_increase_the_distance_or_enable_more_options_in_the_settings">Unfortunately, no coordinates have been found with the current settings. Try to increase the distance or enable more options in the settings.</string>
 </resources>

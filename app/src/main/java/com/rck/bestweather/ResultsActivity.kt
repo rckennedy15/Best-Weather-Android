@@ -19,8 +19,11 @@ along with Best Weather.  If not, see <https://www.gnu.org/licenses/>
 
 package com.rck.bestweather
 
+import android.content.Intent
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.TextView
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -34,12 +37,13 @@ import kotlin.properties.Delegates
 class ResultsActivity : AppCompatActivity(), OnMapReadyCallback {
     private var latitude by Delegates.notNull<Double>()
     private var longitude by Delegates.notNull<Double>()
+    private lateinit var name: String
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_results)
         val extras = intent.extras
         if (extras != null) {
-            val name = extras.getString("name")
+            name = extras.getString("name")!!
             val temp = extras.getDouble("temp")
             val clouds = extras.getDouble("clouds")
             latitude = extras.getDouble("lat")
@@ -58,16 +62,16 @@ class ResultsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
-        googleMap.addMarker(
-            MarkerOptions()
-                .position(LatLng(latitude, longitude))
-                .title("Best Weather")
-        )
-        val center = CameraUpdateFactory.newLatLng(LatLng(latitude, longitude))
-        val zoom = CameraUpdateFactory.zoomTo(12f)
-        this.runOnUiThread {
-            googleMap.moveCamera(center)
-            googleMap.animateCamera(zoom)
-        }
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(latitude, longitude), 10F));
+
+    }
+
+    fun startDirections(view: View) {
+        val encodedName = Uri.encode(name)
+        val gmmIntentUri =
+            Uri.parse("google.navigation:q=$encodedName")
+        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+        mapIntent.setPackage("com.google.android.apps.maps")
+        startActivity(mapIntent)
     }
 }

@@ -46,9 +46,6 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import java.util.*
 
-// urgent
-// TODO add error activity (no location found)
-
 // future
 // TODO max distance is hardcoded to 100 miles, change to dynamic
 // TODO Save weather results and do not update them unless location has significantly changed
@@ -143,8 +140,6 @@ class MainActivity : AppCompatActivity() {
      * Uses the google play services fusedLocationProviderClient to fetch the current location.
      */
     fun fetchLocation(view: View) {
-        val task = fusedLocationProviderClient.lastLocation
-
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED && ActivityCompat
                     .checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -162,23 +157,13 @@ class MainActivity : AppCompatActivity() {
         nDialog.setCancelable(false)
         nDialog.show()
 
-        task.addOnSuccessListener { res ->
-            if (res != null && res.elapsedRealtimeNanos < 1800000000000L) {
-                // last location is available, will be faster
-                Toast.makeText(this, "Latitude: ${res.latitude}, Longitude: ${res.longitude}", Toast.LENGTH_SHORT).show()
-                start(res.latitude, res.longitude, nDialog)
+        val task1 = fusedLocationProviderClient.getCurrentLocation(LocationRequest.PRIORITY_HIGH_ACCURACY, null)
+        task1.addOnSuccessListener {
+            if (it != null) {
+                Toast.makeText(this, "Latitude: ${it.latitude}, Longitude: ${it.longitude}", Toast.LENGTH_SHORT).show()
+                start(it.latitude, it.longitude, nDialog)
             } else {
-                // unable to get last location, need to update, will be slower
-                // or it has been over 30 minutes since last location update
-                val task1 = fusedLocationProviderClient.getCurrentLocation(LocationRequest.PRIORITY_HIGH_ACCURACY, null)
-                task1.addOnSuccessListener {
-                    if (it != null) {
-                        Toast.makeText(this, "Latitude: ${it.latitude}, Longitude: ${it.longitude}", Toast.LENGTH_SHORT).show()
-                        start(it.latitude, it.longitude, nDialog)
-                    } else {
-                        Toast.makeText(this, "unable to get location", Toast.LENGTH_SHORT).show()
-                    }
-                }
+                Toast.makeText(this, "unable to get location", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -217,7 +202,11 @@ class MainActivity : AppCompatActivity() {
                     startActivity(intent)
                 }
             } else {
-                // TODO no coordinates found with current settings
+                // no coordinates found with current settings
+                runOnUiThread {
+                    val intent = Intent(context, ErrorActivity::class.java)
+                    startActivity(intent)
+                }
             }
         }
     }
@@ -232,14 +221,21 @@ class MainActivity : AppCompatActivity() {
     private suspend fun findBestWeatherObject(coordinates: Map<Double, Double>): JSONObject? = withContext(Dispatchers.IO) {
         suspend fun getWeathers(): List<JSONObject> {
             val weathers = mutableListOf<JSONObject>()
-            for ((long, lat) in coordinates) {
-                GlobalScope.launch {
-                    val JSONResponse = getJSONResponse("https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${long}&appid=${BuildConfig.WEATHER_API_KEY}")
-                    if (JSONResponse != null) {
-                        weathers.add(JSONResponse)
+            coroutineScope {
+                coordinates.map {
+                    async(Dispatchers.IO) {
+                        Log.d("threadLaunch", "started")
+                        val JSONResponse =
+                            getJSONResponse("https://api.openweathermap.org/data/2.5/weather?lat=${it.value}&lon=${it.key}&appid=${BuildConfig.WEATHER_API_KEY}")
+                        if (JSONResponse != null) {
+                            weathers.add(JSONResponse)
+                        }
+                        Log.d("threadLaunch", "ended")
                     }
-                }.join()
+                }.awaitAll()
+                Log.d("threadLaunch", "finished")
             }
+
             for (weather in weathers) {
                 Log.d("list", weather.toString())
             }
