@@ -15,3 +15,16 @@ weather.api.key="<EXAMPLE_OPENWEATHERMAPS_API_KEY>"
 replacing <EXAMPLE_API_KEY> with your actual api keys.
 
 Next, in Android Studio, select Build -> Clean Project and then Build -> Rebuild Project to allow api key to register
+
+## Screenshots
+Home Activity | Asking for location
+:----:|:-----:
+![home screen](https://user-images.githubusercontent.com/23503751/160009054-dbbbe339-a9c1-4c91-b626-52c4f711359b.png) | ![asking for location](https://user-images.githubusercontent.com/23503751/160009354-b774b389-568a-4e10-9d7b-efdd0f0e7de9.png)
+Results Activity | test4
+![results](https://user-images.githubusercontent.com/23503751/160010442-68d30fee-4aeb-4126-a8be-71feeaa1adcb.png) | ![settings screen](https://user-images.githubusercontent.com/23503751/160010474-ccedd0ad-dd75-4b54-81fb-9592729a395f.png)
+
+
+
+
+
+
