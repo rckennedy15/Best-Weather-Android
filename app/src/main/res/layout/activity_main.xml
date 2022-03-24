@@ -36,7 +36,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_button_outline" />
+        app:srcCompat="@drawable/ic_button_outline"
+        android:elevation="2dp"/>
 
     <ImageView
         android:id="@+id/settingsButton"
@@ -75,7 +76,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="10 Miles"
-        android:textColor="#97DDEC"
+        android:textColor="#007F9A"
         android:textSize="25sp"
         app:layout_constraintBottom_toTopOf="@+id/seekBar"
         app:layout_constraintEnd_toEndOf="parent"

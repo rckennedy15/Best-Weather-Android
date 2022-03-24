@@ -24,17 +24,20 @@
         <SwitchPreferenceCompat
             app:defaultValue="false"
             app:key="prioritizeTemp"
-            app:title="Prioritize the temperature over the cloud cover" />
+            app:title="Prioritize temperature"
+            app:summary="If on, the app will place more value on finding a better temperature, rather than finding a better cloud cover"/>
 
         <SwitchPreferenceCompat
             app:defaultValue="true"
             app:key="preferHighTemp"
-            app:title="Prefer higher temperatures over lower temperatures" />
+            app:title="Prefer higher temps"
+            app:summary="If on, higher temperatures will always be preferred over lower temperatures"/>
 
         <SwitchPreferenceCompat
             app:defaultValue="false"
             app:key="preferHighCloudCover"
-            app:title="Prefer more clouds" />
+            app:title="Prefer more clouds"
+            app:summary="If on, higher cloud cover will always be preferred over lower cloud cover"/>
 
     </PreferenceCategory>
 

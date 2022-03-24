@@ -203,6 +203,7 @@ class MainActivity : AppCompatActivity() {
                 }
             } else {
                 // no coordinates found with current settings
+                nDialog.dismiss()
                 runOnUiThread {
                     val intent = Intent(context, ErrorActivity::class.java)
                     startActivity(intent)
